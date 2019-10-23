@@ -1,0 +1,115 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Web Worker</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <meta charset=utf-8 />
+  </head>
+  <style> 
+    h1 {
+      position: relative;
+      bottom: 10px;
+      left: 280px;
+    }
+     article { 	
+      position: center;
+      color:blue; 
+    }
+    input {
+      width: 80px;
+      height: 35px;
+      font-size: 120%;
+    }
+  #actions {
+    position:center;
+}
+  </style>
+  <body>	
+    <script>
+      var myWorker;
+      function start() {
+        console.log("WebWorker: Starting");
+        myWorker = new Worker("highPrime2.js");
+        myWorker.addEventListener("message", primeHandler, false);
+        var maxNum = $('#upto').val();
+        myWorker.postMessage({'cmd': 'start', 'upto': maxNum});
+      }
+      function stop() {
+        if (myWorker != undefined) {
+          var msg = "<br/>WebWorker: Terminating " + new Date();
+          console.log(msg);
+          $('#status').append(msg);
+          myWorker.terminate();
+          myWorker = null;
+        }
+      }
+      function primeHandler(event) {
+        console.log ('got e:'+event.data);
+        if (is_numeric(event.data)) {
+          $('#result').append(event.data);
+        }
+        else {
+          $('#status').append(JSON.stringify(event.data) );
+        }
+      }
+      function is_numeric(input){
+        return typeof(input)=='number';
+      }
+    </script>
+
+    <h1>Web Worker</h1>
+    <article>The prime numbers: 
+      <output id="result"></output>
+      <div id="status"></div>
+    </article>
+    <div id="actions">
+      <center><input type="text" name="upto" id='upto'/></center><br>
+      <center><button onclick="start()" title="Start the work">Start</button>
+      <button onclick="stop()" title="Stop the work and go have a drink">Stop</button></center>
+    </div>
+  </body>
+</html>
+<script>
+  self.addEventListener('message', function(e) {
+    var data = e.data;
+    var shouldRun = true;
+    switch (data.cmd) {
+      case 'stop':
+        postMessage('Worker stopped the prime calculation (Al Gore is happy now) ' + 
+          data.msg );
+        shouldRun = false;
+        self.close();
+        break;
+      case 'start':
+        postMessage("Worker start working upto: " + data.upto + " (" + new Date()+ ")<br/>");
+        var numbers = isPrime(data.upto);
+        postMessage("Got back these numbers: "+ numbers + "<br/>");
+        break;
+      default:
+        postMessage('Dude, unknown cmd: ' + data.msg);
+    };	
+  }, false);
+  function isPrime(number) {
+    var numArray = "";
+    var this_number,divisor,not_prime;
+    var this_number = 3;
+    while(this_number < number) {
+      var divisor = parseInt( this_number / 2);
+      var not_prime = 0;
+      while(divisor > 1) {
+        if(this_number % divisor == 0) {
+          not_prime = 1;
+          divisor = 0;
+        }
+        else {
+          divisor = divisor - 1;
+        }
+      }
+      if(not_prime == 0) {
+        numArray += (this_number + " ");
+      }
+      this_number = this_number + 1;
+    }
+    return numArray;
+  }
+</script>
